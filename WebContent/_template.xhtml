@@ -1,0 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://xmlns.jcp.org/jsf/html">
+	
+<h:head></h:head>
+
+<h:body>
+	<div id="cabecalho">
+		<h:graphicImage library="img" name="logo.png" />
+		<h:form rendered="#{usuarioLogado != null}">
+		  <h:commandLink action="#{loginBean.efetuaLogout}" value="Logout" />
+		</h:form>
+		<h1>
+			<ui:insert name="titulo"></ui:insert>
+		</h1>
+		<h:outputText value="#{sessionScope['usuarioLogado'].email}" />
+	</div>
+	<div id="conteudo">
+		<ui:insert name="conteudo"></ui:insert>
+	</div>
+	<div id="footer">
+		<br />
+		<br />
+		<br />
+		<ui:insert name="rodape"></ui:insert>
+		<strong>Copyright 2017</strong>
+	</div>
+</h:body>
+</html>

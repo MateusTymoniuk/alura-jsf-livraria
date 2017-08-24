@@ -12,16 +12,30 @@ import javax.faces.validator.ValidatorException;
 import br.com.caelum.livraria.dao.DAO;
 import br.com.caelum.livraria.modelo.Autor;
 import br.com.caelum.livraria.modelo.Livro;
+import br.com.caelum.livraria.util.RedirectView;
 
 @ManagedBean
 @ViewScoped
 public class LivroBean {
 
 	private Livro livro = new Livro();
+	private Integer livroId;
 	private Integer autorId;
+	
+	public Integer getLivroId() {
+		return livroId;
+	}
+
+	public void setLivroId(Integer livroId) {
+		this.livroId = livroId;
+	}
 
 	public Livro getLivro() {
 		return livro;
+	}
+	
+	public void setLivro(Livro livro) {
+		this.livro = livro;
 	}
 
 	public List<Livro> getLivros() {
@@ -49,7 +63,15 @@ public class LivroBean {
 		this.livro.adicionaAutor(autor);
 		System.out.println("Escrito por: " + autor.getNome());
 	}
+	
+	public RedirectView formAutor() {
+		return new RedirectView("autor");
+	}
 
+	public void carregarlivroPeloId() {
+		this.livro = new DAO<Livro>(Livro.class).buscaPorId(livroId);
+	}
+	
 	public void gravar() {
 		System.out.println("Gravando livro " + getLivro().getTitulo());
 
@@ -60,15 +82,29 @@ public class LivroBean {
 			return;
 		}
 
-		new DAO<Livro>(Livro.class).adiciona(this.livro);
+		if(this.livro.getId() == null) {
+			new DAO<Livro>(Livro.class).adiciona(this.livro);
+		} else {
+			new DAO<Livro>(Livro.class).atualiza(this.livro);
+		}
 
 		this.livro = new Livro();
 	}
+	
+	public void remover(Livro livro) {
+		System.out.println("Removendo livro " + livro);
+		new DAO<Livro>(Livro.class).remove(livro);
+	}
+	
+	public void removeAutorDoLivro(Autor autor) {
+		System.out.println("Removendo autor " + autor);
+		this.livro.removerAutor(autor);
+	}
 
-	public void comecaComDigitoUm(FacesContext fc, UIComponent component, Object value) throws ValidatorException {
+	public void contemMaisDeTresDigitos(FacesContext fc, UIComponent component, Object value) throws ValidatorException {
 		String valor = value.toString();
-		if (!valor.startsWith("1")) {
-			throw new ValidatorException(new FacesMessage("ISBN deve começar com 1"));
+		if (valor.length() < 3) {
+			throw new ValidatorException(new FacesMessage("ISBN deve conter mais de 3 dígitos"));
 		}
 	}
 
