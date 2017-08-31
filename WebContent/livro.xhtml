@@ -17,7 +17,7 @@
 		Novo Livro
 	</ui:define>
 	<ui:define name="conteudo">
-		<h:form>
+		<h:form id="formLivro">
 			<p:messages id="mensagens" />
 			<p:fieldset legend="Dados do Livro">
 				<p:panelGrid columns="2">
@@ -75,8 +75,8 @@
 		</h:form>
 
 		<h:form id="formTabelaLivros">
-			<p:dataTable id="tabelaLivros" value="#{livroBean.livroDataModel}"
-				var="livro" paginator="true" rows="5" lazy="true">
+			<p:dataTable value="#{livroBean.livros}" var="livro"
+				id="tabelaLivros" paginator="true" rows="5">
 				<f:facet name="header">Livros</f:facet>
 				<p:column headerText="Título" sortBy="#{livro.titulo}"
 					filterBy="#{livro.titulo}" filterMatchMode="startsWith">
@@ -85,22 +85,29 @@
 				<p:column headerText="ISBN" sortBy="#{livro.isbn}">
 					<h:outputText value="#{livro.isbn}" />
 				</p:column>
-				<p:column headerText="Preço">
-					<h:outputText value="#{livro.preco}" />
-				</p:column>
-				<p:column headerText="Data">
-					<h:outputText value="#{livro.dataLancamento.time}">
-						<f:convertDateTime pattern="dd/MM/yyyy" />
+				<p:column headerText="Preço" sortBy="#{livro.preco}">
+					<h:outputText value="#{livro.preco}">
+						<f:convertNumber type="currency" pattern="R$ #0.00"
+							currencySymbol="R$" locale="pt_BR" />
 					</h:outputText>
 				</p:column>
-				<p:column headerText="Alterar">
-					<h:commandLink value="altera">
-						<f:setPropertyActionListener value="#{livro}"
-							target="#{livroBean.livro}" />
-					</h:commandLink>
+				<p:column headerText="Data" sortBy="#{livro.dataLancamento.time}">
+					<h:outputText value="#{livro.dataLancamento.time}">
+						<f:convertDateTime pattern="dd/MM/yyyy"
+							timeZone="America/Sao_Paulo" />
+					</h:outputText>
 				</p:column>
+
+				<p:column headerText="Alterar">
+					<p:commandButton update=":formLivro" process="@this"
+						value="alterar" action="#{livroBean.carregar(livro)}"
+						icon="fa fa-fw fa-edit" />
+				</p:column>
+
 				<p:column headerText="Remover">
-					<h:commandLink action="#{livroBean.remover(livro)}" value="remove" />
+					<p:commandButton update="@form" process="@this" value="remover"
+						action="#{livroBean.remover(livro)}"
+						icon="fa fa-fw fa-remove" />
 				</p:column>
 			</p:dataTable>
 		</h:form>
