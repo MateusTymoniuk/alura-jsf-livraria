@@ -1,30 +1,43 @@
 package br.com.caelum.livraria.bean;
 
+import java.io.Serializable;
 import java.util.List;
 
 import javax.faces.application.FacesMessage;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ViewScoped;
 import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
 import javax.faces.validator.ValidatorException;
+import javax.faces.view.ViewScoped;
+import javax.inject.Inject;
+import javax.inject.Named;
 
-import br.com.caelum.livraria.dao.DAO;
+import br.com.caelum.livraria.dao.AutorDao;
+import br.com.caelum.livraria.dao.LivroDao;
 import br.com.caelum.livraria.modelo.Autor;
 import br.com.caelum.livraria.modelo.Livro;
-import br.com.caelum.livraria.modelo.LivroDataModel;
+import br.com.caelum.livraria.tx.Log;
+import br.com.caelum.livraria.tx.Transacional;
 import br.com.caelum.livraria.util.RedirectView;
 
-@ManagedBean
+@Named
 @ViewScoped
-public class LivroBean {
+public class LivroBean implements Serializable {
 
+	private static final long serialVersionUID = 1L;
 	private Livro livro = new Livro();
 	private Integer livroId;
 	private Integer autorId;
 	private List<Livro> livros;
-	private LivroDataModel livroDataModel = new LivroDataModel();
+
+	@Inject
+	LivroDao livroDao;
+
+	@Inject
+	AutorDao autorDao;
 	
+	@Inject
+	FacesContext context;
+
 	public Integer getLivroId() {
 		return livroId;
 	}
@@ -41,20 +54,28 @@ public class LivroBean {
 		this.livro = livro;
 	}
 
+	@Log
 	public List<Livro> getLivros() {
-		DAO<Livro> dao = new DAO<Livro>(Livro.class);
-		if (this.livros == null) {
-			this.livros = dao.listaTodos();
+		if (livros == null) {
+			preencheListaDeLivros();
 		}
 		return livros;
 	}
+	
+	@Transacional
+	@Log
+	public void preencheListaDeLivros() {
+		livros = livroDao.listaTodos();
+	}
 
+	@Transacional
+	@Log
 	public List<Autor> getAutores() {
-		return new DAO<Autor>(Autor.class).listaTodos();
+		return autorDao.listaTodos();
 	}
 
 	public List<Autor> getAutoresDoLivro() {
-		return this.livro.getAutores();
+		return livro.getAutores();
 	}
 
 	public Integer getAutorId() {
@@ -65,13 +86,11 @@ public class LivroBean {
 		this.autorId = autorId;
 	}
 
-	public LivroDataModel getLivroDataModel() {
-		return livroDataModel;
-	}
-
+	@Transacional
+	@Log
 	public void gravarAutor() {
-		Autor autor = new DAO<Autor>(Autor.class).buscaPorId(this.autorId);
-		this.livro.adicionaAutor(autor);
+		Autor autor = autorDao.buscaPorId(this.autorId);
+		livro.adicionaAutor(autor);
 		System.out.println("Escrito por: " + autor.getNome());
 	}
 
@@ -79,39 +98,45 @@ public class LivroBean {
 		return new RedirectView("autor");
 	}
 
-	public void carregarlivroPeloId() {
-		this.livro = new DAO<Livro>(Livro.class).buscaPorId(livroId);
+	@Transacional
+	@Log
+	public void carregar(Livro livro) {
+		this.livro = livroDao.buscaPorId(livro.getId());
 	}
 
+	@Transacional
+	@Log
 	public void gravar() {
 		System.out.println("Gravando livro " + getLivro().getTitulo());
 
 		if (livro.getAutores().isEmpty()) {
 			// throw new RuntimeException("O livro deve ter pelo menos um autor");
-			FacesContext.getCurrentInstance().addMessage("autor",
+			context.addMessage("autor",
 					new FacesMessage("O livro deve conter pelo menos um autor"));
 			return;
 		}
 
-		DAO<Livro> dao = new DAO<Livro>(Livro.class);
-		if (this.livro.getId() == null) {
-			dao.adiciona(this.livro);
-			this.livros = dao.listaTodos();
+		if (livro.getId() == null) {
+			livroDao.adiciona(livro);
+			livros = livroDao.listaTodos();
 		} else {
-			dao.atualiza(this.livro);
+			livroDao.atualiza(livro);
 		}
 
-		this.livro = new Livro();
+		livro = new Livro();
 	}
 
+	@Transacional
+	@Log
 	public void remover(Livro livro) {
 		System.out.println("Removendo livro " + livro);
-		new DAO<Livro>(Livro.class).remove(livro);
+		livroDao.remove(livro);
+		preencheListaDeLivros();
 	}
 
 	public void removeAutorDoLivro(Autor autor) {
 		System.out.println("Removendo autor " + autor);
-		this.livro.removerAutor(autor);
+		livro.removerAutor(autor);
 	}
 
 	public void contemMaisDeTresDigitos(FacesContext fc, UIComponent component, Object value)
